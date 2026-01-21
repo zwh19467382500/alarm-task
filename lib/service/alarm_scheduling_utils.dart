@@ -9,7 +9,6 @@ import 'package:simple_alarm/repository/settings_repository.dart';
 import 'package:simple_alarm/service/alarm_service.dart';
 import 'package:simple_alarm/service_locator.dart';
 
-
 /// 一个独立的工具类，包含所有与闹钟计算、调度、更新相关的静态方法。
 class AlarmSchedulingUtils {
   /// 根据alarmTaskDto更新闹钟任务（静态版本），作为后台任务的入口
@@ -50,8 +49,9 @@ class AlarmSchedulingUtils {
 
   static Future<List<_CalculatedNodeInfo>> calculateTimeNodes(
     AlarmTaskDto dto,
-    bool forceToNextActiveDay,
-  ) async {
+    bool forceToNextActiveDay, {
+    bool forceNextWeek = false,
+  }) async {
     //todo 获取闹钟的重复类型，并根据重复类型获取生效日期
     int targetWeekday = -1;
     if (dto.scheduleType == 'Once') {
@@ -113,7 +113,10 @@ class AlarmSchedulingUtils {
       }
     }
 
-    final startDateStr = _getClosestDateByWeekday(targetWeekday);
+    final startDateStr = _getClosestDateByWeekday(
+      targetWeekday,
+      forceNextWeek: forceNextWeek,
+    );
     final startTimeStr = dto.startTime ?? '00:00';
 
     List<int> intervalsInMinutes = [];
@@ -152,8 +155,8 @@ class AlarmSchedulingUtils {
     );
     //如果列表返回为空，则说明计算的时间节点均已超过当前时间，则重新计算为下一个生效日
     if (dateTimeList.isEmpty) {
-      // 重新计算为下一个生效日
-      return await calculateTimeNodes(dto, true);
+      // 重新计算为下一个生效日，并强制使用下周的日期
+      return await calculateTimeNodes(dto, true, forceNextWeek: true);
     }
     return dateTimeList;
   }
@@ -187,8 +190,10 @@ class AlarmSchedulingUtils {
       final alarmSettings = AlarmSettings(
         id: nodeInfo.alarmSystemId,
         dateTime: nodeInfo.exactDateTime,
-        assetAudioPath: 'assets/alarm.mp3',
-        loopAudio: true,
+        assetAudioPath: task.soundEnabled
+            ? 'assets/alarm.mp3'
+            : 'assets/silent100.mp3',
+        loopAudio: task.soundEnabled,
         vibrate: true,
         allowAlarmOverlap: true,
         notificationSettings: NotificationSettings(
@@ -197,7 +202,7 @@ class AlarmSchedulingUtils {
           stopButton: '停止【$alarmType】',
         ),
         volumeSettings: VolumeSettings.fade(
-          volume: null,
+          volume: task.soundEnabled ? null : 0,
           fadeDuration: Duration(seconds: 3),
         ),
       );
@@ -302,7 +307,10 @@ class AlarmSchedulingUtils {
     return {'isOverlap': isOverlap, 'nextActiveDay': nextActiveDay};
   }
 
-  static String _getClosestDateByWeekday(int targetWeekday) {
+  static String _getClosestDateByWeekday(
+    int targetWeekday, {
+    bool forceNextWeek = false,
+  }) {
     if (targetWeekday < 1 || targetWeekday > 7) {
       throw ArgumentError("星期参数必须在1-7之间");
     }
@@ -311,12 +319,16 @@ class AlarmSchedulingUtils {
     int daysToAdd = targetWeekday >= currentWeekday
         ? targetWeekday - currentWeekday
         : 7 - currentWeekday + targetWeekday;
+
+    // 如果需要强制下周，且目标日是今天（daysToAdd == 0），则加7天
+    if (forceNextWeek && daysToAdd == 0) {
+      daysToAdd = 7;
+    }
+
     return DateFormat(
       'yyyy-MM-dd',
     ).format(today.add(Duration(days: daysToAdd)));
   }
-
-  
 }
 
 // 定义一个临时的内部类，用于在计算过程中携带完整信息
