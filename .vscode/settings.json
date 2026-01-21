@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "jpush-service": {
+      "command": "npx",
+      "args": [
+        "-y",
+        "@modelcontextprotocol/server-sse",
+        "http://localhost:8002/sse"
+      ],
+      "description": "JPush推送服务MCP服务器"
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Flutter Debug",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "args": [
+        "--verbose"
+      ]
+    },
+    {
+      "name": "Flutter Debug (Android)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "device": "android",
+      "args": [
+        "--verbose"
+      ]
+    },
+    {
+      "name": "Flutter Debug (iOS)",
+      "request": "launch",
+      "type": "dart",
+      "program": "lib/main.dart",
+      "device": "ios",
+      "args": [
+        "--verbose"
+      ]
+    }
+  ]
+}

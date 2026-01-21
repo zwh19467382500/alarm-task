@@ -1,0 +1,6 @@
+fastapi
+uvicorn[standard]
+jpush
+pydantic
+python-dotenv
+fastmcp
